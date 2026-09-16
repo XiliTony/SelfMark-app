@@ -1,6 +1,6 @@
 // 全局的常量
 class GlobalConstants {
-  static const String BASE_URL = "http://localhost:8080"; // 基础地址
+  static const String BASE_URL = "http://10.0.2.2:8080"; // 基础地址
   static const int TIME_OUT = 10; // 超时时间
   static const int SUCCESS_CODE = 200; // 成功状态
   static const String TOKEN_KEY = "selfmark_token"; // token对应的持久化的 key
