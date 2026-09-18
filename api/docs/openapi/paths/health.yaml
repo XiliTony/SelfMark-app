@@ -1,0 +1,33 @@
+/actuator/health:
+  get:
+    summary: Actuator 健康检查
+    operationId: actuatorHealth
+    tags: [基础设施]
+    security: []
+    responses:
+      '200':
+        description: 服务可用
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, example: UP }
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/api/health:
+  get:
+    summary: API 健康检查
+    operationId: apiHealth
+    tags: [基础设施]
+    security: []
+    responses:
+      '200':
+        description: 服务可用
+        content:
+          application/json:
+            schema: { $ref: '../components/common-schemas.yaml#/ApiResponseHealth' }
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'

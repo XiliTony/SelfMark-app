@@ -1,0 +1,65 @@
+NullableData:
+  type: object
+  nullable: true
+  example: null
+
+ApiResponseEmpty:
+  type: object
+  required: [code, msg, data]
+  properties:
+    code: { type: integer, enum: [200], example: 200 }
+    msg: { type: string, example: success }
+    data: { $ref: '#/NullableData' }
+
+ApiResponseError:
+  type: object
+  required: [code, msg, data]
+  description: 错误响应基础结构；当前版本的 code 与实际 HTTP 状态码保持一致。
+  properties:
+    code:
+      type: integer
+      minimum: 400
+      maximum: 599
+      description: 当前版本等于实际 HTTP 状态码，不是独立业务码。
+    msg: { type: string, description: 面向调用方的错误说明 }
+    data: { $ref: '#/NullableData' }
+
+ApiResponseBadRequest:
+  allOf:
+    - $ref: '#/ApiResponseError'
+    - type: object
+      properties:
+        code: { type: integer, enum: [400], example: 400 }
+
+ApiResponseUnauthorized:
+  allOf:
+    - $ref: '#/ApiResponseError'
+    - type: object
+      properties:
+        code: { type: integer, enum: [401], example: 401 }
+
+ApiResponseConflict:
+  allOf:
+    - $ref: '#/ApiResponseError'
+    - type: object
+      properties:
+        code: { type: integer, enum: [409], example: 409 }
+
+ApiResponseInternalServerError:
+  allOf:
+    - $ref: '#/ApiResponseError'
+    - type: object
+      properties:
+        code: { type: integer, enum: [500], example: 500 }
+
+ApiResponseHealth:
+  type: object
+  required: [code, msg, data]
+  properties:
+    code: { type: integer, enum: [200], example: 200 }
+    msg: { type: string, example: success }
+    data:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, example: UP }

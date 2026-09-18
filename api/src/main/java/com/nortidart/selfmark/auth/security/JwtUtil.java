@@ -31,7 +31,7 @@ public class JwtUtil {
         return issue(userId, null, role);
     }
 
-    public String issue(Long userId, String account, String role) {
+    public String issue(Long userId, String mobile, String role) {
         Instant now = Instant.now();
         Instant expiresAt = now.plus(properties.ttl());
         var builder = JWT.create()
@@ -42,8 +42,8 @@ public class JwtUtil {
                 .withClaim("role", role)
                 .withIssuedAt(Date.from(now))
                 .withExpiresAt(Date.from(expiresAt));
-        if (account != null) {
-            builder.withClaim("account", account);
+        if (mobile != null) {
+            builder.withClaim("mobile", mobile);
         }
         return builder.sign(algorithm);
     }

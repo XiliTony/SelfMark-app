@@ -160,8 +160,8 @@ subscription
 
 | 方法 | 路径 | 鉴权 | 说明 |
 |---|---|---|---|
-| POST | /api/auth/register | 否 | body: {mobile, password, username}；返回 {id, account, username, token}，其中 account=mobile |
-| POST | /api/auth/login | 否 | body: {mobile, password}；返回 {id, account, username, token} |
+| POST | /api/auth/register | 否 | body: {mobile, password, username}；返回 {id, mobile, username, token} |
+| POST | /api/auth/login | 否 | body: {mobile, password}；返回 {id, mobile, username, token} |
 | POST | /api/auth/logout | 是 | 把当前 token jti 加入 Redis 黑名单（TTL=token 剩余有效期）|
 | GET | /api/tasks/market | 是 | 返回 market 列表：所有 SYSTEM + 所有 SHARED（shared=1）；按 created_at desc |
 | POST | /api/tasks | 是 | body: {name, content}；创建 PRIVATE Task（type=PRIVATE, shared=0, creator_id=me）；同时自动生成一条 Subscription（自己订阅自己，Time Window 由 body 提供）|

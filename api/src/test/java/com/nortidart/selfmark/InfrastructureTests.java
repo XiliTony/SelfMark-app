@@ -7,6 +7,7 @@ import com.nortidart.selfmark.common.exception.BusinessException;
 import com.nortidart.selfmark.common.response.ApiResponse;
 import com.nortidart.selfmark.auth.security.JwtUtil;
 import com.nortidart.selfmark.auth.mapper.UserMapper;
+import com.nortidart.selfmark.auth.service.TokenBlacklistService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -16,6 +17,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -28,6 +30,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.Mockito.doThrow;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -44,6 +47,9 @@ class InfrastructureTests {
 
     @MockitoBean
     UserMapper userMapper;
+
+    @MockitoBean
+    TokenBlacklistService tokenBlacklistService;
 
     @Autowired
     private org.springframework.test.web.servlet.MockMvc mockMvc;
@@ -64,6 +70,17 @@ class InfrastructureTests {
         mockMvc.perform(get("/api/test/current-user").header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(content().json("{\"code\":200,\"msg\":\"success\",\"data\":42}"));
+    }
+
+    @Test
+    void redisBlacklistFailureDoesNotFailOpen() throws Exception {
+        String token = jwtUtil.issue(42L, "USER");
+        doThrow(new RedisConnectionFailureException("Redis unavailable"))
+                .when(tokenBlacklistService).isBlacklisted(org.mockito.ArgumentMatchers.anyString());
+
+        mockMvc.perform(get("/api/test/current-user").header("Authorization", "Bearer " + token))
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().json("{\"code\":500,\"msg\":\"服务器内部错误\",\"data\":null}"));
     }
 
     @Test

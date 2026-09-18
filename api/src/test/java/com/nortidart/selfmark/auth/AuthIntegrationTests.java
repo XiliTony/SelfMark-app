@@ -19,6 +19,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -36,11 +37,17 @@ class AuthIntegrationTests {
             .withUsername("selfmark")
             .withPassword("selfmark");
 
+    @Container
+    static final GenericContainer<?> REDIS = new GenericContainer<>("redis:7.4-alpine")
+            .withExposedPorts(6379);
+
     @DynamicPropertySource
     static void configureDatabase(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", MYSQL::getJdbcUrl);
         registry.add("spring.datasource.username", MYSQL::getUsername);
         registry.add("spring.datasource.password", MYSQL::getPassword);
+        registry.add("spring.data.redis.host", REDIS::getHost);
+        registry.add("spring.data.redis.port", () -> REDIS.getMappedPort(6379));
     }
 
     @Autowired MockMvc mockMvc;
@@ -58,7 +65,8 @@ class AuthIntegrationTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data.id").isNumber())
-                .andExpect(jsonPath("$.data.account").value("13800138000"))
+                .andExpect(jsonPath("$.data.mobile").value("13800138000"))
+                .andExpect(jsonPath("$.data.account").doesNotExist())
                 .andExpect(jsonPath("$.data.username").value("Integration"))
                 .andExpect(jsonPath("$.data.password").doesNotExist())
                 .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
@@ -81,7 +89,8 @@ class AuthIntegrationTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"mobile\":\"13800138000\",\"password\":\"Password123\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.account").value("13800138000"))
+                .andExpect(jsonPath("$.data.mobile").value("13800138000"))
+                .andExpect(jsonPath("$.data.account").doesNotExist())
                 .andExpect(jsonPath("$.data.password").doesNotExist())
                 .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
         assertProtectedEndpoint(objectMapper.readTree(loginBody).at("/data/token").asText(),
@@ -130,11 +139,12 @@ class AuthIntegrationTests {
                 .andExpect(jsonPath("$.msg").value("手机号格式错误"));
     }
 
-    private void assertProtectedEndpoint(String token, String account, String username) throws Exception {
+    private void assertProtectedEndpoint(String token, String mobile, String username) throws Exception {
         assertThat(token).isNotBlank();
         mockMvc.perform(get("/api/users/me").header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.account").value(account))
+                .andExpect(jsonPath("$.data.mobile").value(mobile))
+                .andExpect(jsonPath("$.data.account").doesNotExist())
                 .andExpect(jsonPath("$.data.username").value(username))
                 .andExpect(jsonPath("$.data.password").doesNotExist());
     }

@@ -25,12 +25,14 @@ import org.springframework.dao.DuplicateKeyException;
 class AuthServiceTests {
     private UserMapper userMapper;
     private AuthService authService;
+    private JwtUtil jwtUtil;
 
     @BeforeEach
     void setUp() {
         userMapper = mock(UserMapper.class);
-        authService = new AuthService(userMapper, new BCryptPasswordEncoder(),
-                new JwtUtil(new JwtProperties("selfmark-test-jwt-secret-at-least-32-characters", Duration.ofDays(7))));
+        jwtUtil = new JwtUtil(
+                new JwtProperties("selfmark-test-jwt-secret-at-least-32-characters", Duration.ofDays(7)));
+        authService = new AuthService(userMapper, new BCryptPasswordEncoder(), jwtUtil);
     }
 
     @Test
@@ -49,9 +51,11 @@ class AuthServiceTests {
         assertThat(inserted.get().getPassword()).startsWith("$2").isNotEqualTo("secret123");
         assertThat(new BCryptPasswordEncoder().matches("secret123", inserted.get().getPassword())).isTrue();
         assertThat(response.id()).isEqualTo(7L);
-        assertThat(response.account()).isEqualTo("13800138000");
+        assertThat(response.mobile()).isEqualTo("13800138000");
         assertThat(response.username()).isEqualTo("Alice");
         assertThat(response.token()).isNotBlank();
+        assertThat(jwtUtil.parse(response.token()).getClaim("mobile").asString()).isEqualTo("13800138000");
+        assertThat(jwtUtil.parse(response.token()).getClaim("account").isMissing()).isTrue();
     }
 
     @Test

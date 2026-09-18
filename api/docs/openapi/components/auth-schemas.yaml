@@ -1,0 +1,59 @@
+RegisterRequest:
+  type: object
+  required: [mobile, password, username]
+  properties:
+    mobile:
+      type: string
+      pattern: '^1[3-9]\d{9}$'
+      example: '13800138000'
+    password:
+      type: string
+      format: password
+      description: 最多 72 个 UTF-8 字节（bcrypt 限制）
+    username: { type: string, maxLength: 50, example: 小明 }
+
+LoginRequest:
+  type: object
+  required: [mobile, password]
+  properties:
+    mobile:
+      type: string
+      pattern: '^1[3-9]\d{9}$'
+      example: '13800138000'
+    password:
+      type: string
+      format: password
+      description: 最多 72 个 UTF-8 字节（bcrypt 限制）
+
+UserResponse:
+  type: object
+  required: [id, mobile, username]
+  properties:
+    id: { type: integer, format: int64 }
+    mobile: { type: string, description: 登录手机号, example: '13800138000' }
+    username: { type: string, description: 用户展示名, example: 小明 }
+
+AuthPayload:
+  type: object
+  required: [id, mobile, username, token]
+  properties:
+    id: { type: integer, format: int64 }
+    mobile: { type: string, example: '13800138000' }
+    username: { type: string, example: 小明 }
+    token: { type: string }
+
+ApiResponseAuth:
+  type: object
+  required: [code, msg, data]
+  properties:
+    code: { type: integer, enum: [200], example: 200 }
+    msg: { type: string, example: success }
+    data: { $ref: '#/AuthPayload' }
+
+ApiResponseUser:
+  type: object
+  required: [code, msg, data]
+  properties:
+    code: { type: integer, enum: [200], example: 200 }
+    msg: { type: string, example: success }
+    data: { $ref: '#/UserResponse' }

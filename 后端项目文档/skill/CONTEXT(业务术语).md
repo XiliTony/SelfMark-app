@@ -4,9 +4,9 @@
 
 ## 术语表
 
-**Account**:
-用户登录账号。v1 固定为中国大陆手机号：请求字段使用 `mobile`，认证响应字段使用 `account`，且 `account=mobile`。`username` 仅表示展示名，不可用于登录。
-_Avoid_: 把 username 称为账号, nickname
+**Mobile**:
+用户登录手机号。v1 的请求、响应、JWT 自定义 claim 和数据库列统一使用 `mobile`；`username` 仅表示展示名，不可用于登录。
+_Avoid_: account, 把 username 称为账号, nickname
 
 **Task**:
 用户每天需要执行的具体活动，由名字、内容、Time Window 构成。前端在"插件市场"界面中将其呈现为"插件"，但后端只有 Task 这一个实体，无 Plugin 概念。

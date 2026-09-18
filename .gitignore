@@ -9,6 +9,7 @@ api/.codex/
 
 # Maven build output
 **/target/
+/api/docs/openapi/.tmp/
 
 # Sensitive local configuration
 **/application-local.yml

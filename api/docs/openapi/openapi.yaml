@@ -1,0 +1,59 @@
+openapi: 3.0.3
+info:
+  title: SelfMark API
+  version: 0.0.1
+  description: SelfMark 后端接口契约。模块源文件经 Redocly bundle 后交付 Apifox 和前端。
+servers:
+  - url: http://localhost:8080
+tags:
+  - name: 基础设施
+    description: 服务存活与健康检查接口。
+  - name: 认证
+    description: 手机号注册登录、当前用户与 JWT 登出接口。
+paths:
+  /actuator/health:
+    $ref: './paths/health.yaml#/~1actuator~1health'
+  /api/health:
+    $ref: './paths/health.yaml#/~1api~1health'
+  /api/auth/register:
+    $ref: './paths/auth.yaml#/~1api~1auth~1register'
+  /api/auth/login:
+    $ref: './paths/auth.yaml#/~1api~1auth~1login'
+  /api/auth/logout:
+    $ref: './paths/auth.yaml#/~1api~1auth~1logout'
+  /api/users/me:
+    $ref: './paths/auth.yaml#/~1api~1users~1me'
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: './components/security.yaml#/bearerAuth'
+  schemas:
+    ApiResponseEmpty:
+      $ref: './components/common-schemas.yaml#/ApiResponseEmpty'
+    ApiResponseError:
+      $ref: './components/common-schemas.yaml#/ApiResponseError'
+    ApiResponseBadRequest:
+      $ref: './components/common-schemas.yaml#/ApiResponseBadRequest'
+    ApiResponseUnauthorized:
+      $ref: './components/common-schemas.yaml#/ApiResponseUnauthorized'
+    ApiResponseConflict:
+      $ref: './components/common-schemas.yaml#/ApiResponseConflict'
+    ApiResponseInternalServerError:
+      $ref: './components/common-schemas.yaml#/ApiResponseInternalServerError'
+    ApiResponseHealth:
+      $ref: './components/common-schemas.yaml#/ApiResponseHealth'
+    RegisterRequest:
+      $ref: './components/auth-schemas.yaml#/RegisterRequest'
+    LoginRequest:
+      $ref: './components/auth-schemas.yaml#/LoginRequest'
+    UserResponse:
+      $ref: './components/auth-schemas.yaml#/UserResponse'
+    AuthPayload:
+      $ref: './components/auth-schemas.yaml#/AuthPayload'
+    ApiResponseAuth:
+      $ref: './components/auth-schemas.yaml#/ApiResponseAuth'
+    ApiResponseUser:
+      $ref: './components/auth-schemas.yaml#/ApiResponseUser'
+  responses:
+    InternalServerError:
+      $ref: './components/responses.yaml#/InternalServerError'

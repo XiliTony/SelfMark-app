@@ -1,0 +1,115 @@
+/api/auth/register:
+  post:
+    summary: 注册并登录
+    operationId: register
+    tags: [认证]
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: { $ref: '../components/auth-schemas.yaml#/RegisterRequest' }
+    responses:
+      '200':
+        description: 注册成功
+        content:
+          application/json:
+            schema: { $ref: '../components/auth-schemas.yaml#/ApiResponseAuth' }
+      '400':
+        description: 参数缺失或格式错误
+        content:
+          application/json:
+            schema: { $ref: '../components/common-schemas.yaml#/ApiResponseBadRequest' }
+            example: { code: 400, msg: mobile 不能为空, data: null }
+      '409':
+        description: 手机号已注册
+        content:
+          application/json:
+            schema: { $ref: '../components/common-schemas.yaml#/ApiResponseConflict' }
+            example: { code: 409, msg: 手机号已注册, data: null }
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/api/auth/login:
+  post:
+    summary: 登录
+    operationId: login
+    tags: [认证]
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: { $ref: '../components/auth-schemas.yaml#/LoginRequest' }
+    responses:
+      '200':
+        description: 登录成功
+        content:
+          application/json:
+            schema: { $ref: '../components/auth-schemas.yaml#/ApiResponseAuth' }
+      '400':
+        description: 参数缺失或格式错误
+        content:
+          application/json:
+            schema: { $ref: '../components/common-schemas.yaml#/ApiResponseBadRequest' }
+            example: { code: 400, msg: 手机号格式错误, data: null }
+      '401':
+        description: 手机号不存在或密码错误
+        content:
+          application/json:
+            schema: { $ref: '../components/common-schemas.yaml#/ApiResponseUnauthorized' }
+            example: { code: 401, msg: 手机号或密码错误, data: null }
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/api/auth/logout:
+  post:
+    summary: 登出
+    description: Redis 黑名单不可用时请求失败，不降级到进程内存储。
+    operationId: logout
+    tags: [认证]
+    security: [{ bearerAuth: [] }]
+    responses:
+      '200':
+        description: 登出成功，当前 token 的 jti 已加入 Redis 黑名单
+        content:
+          application/json:
+            schema: { $ref: '../components/common-schemas.yaml#/ApiResponseEmpty' }
+      '401':
+        description: token 缺失、无效、过期或已登出
+        content:
+          application/json:
+            schema: { $ref: '../components/common-schemas.yaml#/ApiResponseUnauthorized' }
+            example: { code: 401, msg: token 已登出, data: null }
+      '500':
+        description: Redis 黑名单服务不可用或服务器内部错误
+        content:
+          application/json:
+            schema: { $ref: '../components/common-schemas.yaml#/ApiResponseInternalServerError' }
+            example: { code: 500, msg: 服务器内部错误, data: null }
+
+/api/users/me:
+  get:
+    summary: 获取当前登录用户
+    description: 鉴权时必须查询 Redis 黑名单；Redis 不可用时请求失败。
+    operationId: getCurrentUser
+    tags: [认证]
+    security: [{ bearerAuth: [] }]
+    responses:
+      '200':
+        description: token 有效并返回当前用户
+        content:
+          application/json:
+            schema: { $ref: '../components/auth-schemas.yaml#/ApiResponseUser' }
+      '401':
+        description: token 缺失、无效、过期或已登出
+        content:
+          application/json:
+            schema: { $ref: '../components/common-schemas.yaml#/ApiResponseUnauthorized' }
+            example: { code: 401, msg: token 无效, data: null }
+      '500':
+        description: Redis 黑名单服务不可用或服务器内部错误
+        content:
+          application/json:
+            schema: { $ref: '../components/common-schemas.yaml#/ApiResponseInternalServerError' }
+            example: { code: 500, msg: 服务器内部错误, data: null }

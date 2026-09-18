@@ -20,20 +20,20 @@ user
 
 行为：
 
-- `POST /api/auth/register`：body `{mobile, password, username}`。mobile 是登录账号，校验为中国大陆手机号且不可重复（重复返回 409）；password 用 bcrypt 加密存入；username 是必填展示名。注册成功后直接返回 `{id, account, username, token}`，其中 `account=mobile`（注册即登录）。
-- `POST /api/auth/login`：body `{mobile, password}`。按 mobile 查询用户（不存在 401）；用 bcrypt 校验密码（错 401）；通过后签发 JWT（含 jti、userId、account、TTL 7 天），返回 `{id, account, username, token}`。
+- `POST /api/auth/register`：body `{mobile, password, username}`。mobile 是登录手机号，校验为中国大陆手机号且不可重复（重复返回 409）；password 用 bcrypt 加密存入；username 是必填展示名。注册成功后直接返回 `{id, mobile, username, token}`（注册即登录）。
+- `POST /api/auth/login`：body `{mobile, password}`。按 mobile 查询用户（不存在 401）；用 bcrypt 校验密码（错 401）；通过后签发 JWT（含 jti、userId、mobile、TTL 7 天），返回 `{id, mobile, username, token}`。
 - 认证响应使用白名单 DTO，**不包含 password 字段**。
 - JWT 签发：HS256 + 服务端密钥（application.yml 配置），claim 包含 `sub=userId`、`jti=UUID`、`exp=7天后`。
 - 测试用例可以创建用户、登录拿 token、用 token 访问受保护接口。
 
 ## 验收标准
 
-- [x] `POST /api/auth/register` 带合法 mobile+password+username 成功，返回 `{code:200, data:{id, account, username, token}}`
+- [x] `POST /api/auth/register` 带合法 mobile+password+username 成功，返回 `{code:200, data:{id, mobile, username, token}}`
 - [x] 注册时 mobile 重复返回 `{code:409, msg:"手机号已注册"}`
 - [x] 注册时 mobile/password/username 缺失或手机号格式错误返回 400
 - [x] DB 中 password 字段是 bcrypt 哈希（明文不可见、不可还原）
 - [x] 返回的 user DTO 不含 password 字段
-- [x] `POST /api/auth/login` 带正确 mobile+password 成功，返回 `{id, account, username, token}`
+- [x] `POST /api/auth/login` 带正确 mobile+password 成功，返回 `{id, mobile, username, token}`
 - [x] 登录时 mobile 不存在返回 401
 - [x] 登录时密码错误返回 401
 - [x] 注册拿到的 token 能用于访问 `/api/**` 受保护接口（拦截器解析出 userId）

@@ -7,13 +7,14 @@
 
 在 Slice 01 的 JWT 拦截器基础上接入 Redis 黑名单，实现"登出后 token 立即失效"。本切片用 Redis 存黑名单，拦截器每次请求查一次。
 
-Slice 02 已确定手机号 `mobile` 为登录账号，认证响应字段 `account` 等于 mobile。Slice 03 只负责 token 生命周期和主动失效，不改变注册/登录请求字段，也不引入短信验证码或 RabbitMQ。
+Slice 02 已确定手机号 `mobile` 为登录账号，请求、响应和 JWT 自定义 claim 均使用 `mobile`。Slice 03 只负责 token 生命周期和主动失效，不改变注册/登录字段，也不引入短信验证码或 RabbitMQ。
 
 行为：
 
 - `POST /api/auth/logout`：需要鉴权。把当前 token 的 jti 加入 Redis 黑名单，key=`blacklist:{jti}`，value 任意（如 `1`），**TTL = token 剩余有效期**（即 `exp - now`，过期后自然消失）。返回成功即可。
 - 修改 Slice 01 的 JWT 拦截器：在签名/有效期校验通过后，**额外查 Redis 黑名单**——如果 `blacklist:{jti}` 存在，返回 401。
 - 黑名单只存 jti，不存整个 token（节省 Redis 内存）。
+- Redis 是黑名单运行依赖；Redis 写入或查询失败时请求失败，不使用 JVM 本地 Map 降级，避免单实例/多实例状态不一致和 fail-open。
 - 测试：登出后用旧 token 访问受保护接口返回 401；登出前 token 正常可用。
 
 ## 验收标准

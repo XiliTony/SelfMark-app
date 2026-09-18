@@ -4,7 +4,7 @@
 
 - 完成日期：2026-09-12
 - 接口：`POST /api/auth/register`、`POST /api/auth/login`、`GET /api/users/me`
-- 账号规则：`mobile` 是唯一登录账号；响应中的 `account` 等于 mobile；`username` 是展示名
+- 账号规则：`mobile` 是唯一登录手机号，请求、响应、JWT claim 和数据库列统一使用该名称；`username` 是展示名
 - 认证方式：手机号 + 密码，注册成功即登录并签发 JWT
 
 ## 前端接口契约
@@ -33,13 +33,13 @@
 ```json
 {
   "id": 1,
-  "account": "13800138000",
+  "mobile": "13800138000",
   "username": "小明",
   "token": "eyJ..."
 }
 ```
 
-前端保存 token，后续受保护请求携带 `Authorization: Bearer <token>`。`account` 用于显示登录账号，`username` 用于显示用户名称；前端不可把 username 当作登录凭证。
+前端保存 token，后续受保护请求携带 `Authorization: Bearer <token>`。`mobile` 用于显示登录手机号，`username` 用于显示用户名称；前端不可把 username 当作登录凭证。
 
 ## 数据与安全方案
 
@@ -47,8 +47,8 @@
 - `user.username VARCHAR(50) NOT NULL`：只承载展示名称，不要求唯一。
 - password 使用 BCrypt 盐化哈希，数据库不保存明文；请求最多 72 个 UTF-8 字节。
 - 登录账号不存在和密码错误统一返回 `手机号或密码错误`，降低账号枚举风险。
-- 认证响应使用白名单 DTO，只暴露 `id/account/username/token`，实体 password 不参与序列化。
-- JWT 使用 HS256，包含 `sub=userId`、`userId`、`account`、`jti`、`iat`、`exp`，TTL 为 7 天。
+- 认证响应使用白名单 DTO，只暴露 `id/mobile/username/token`，实体 password 不参与序列化。
+- JWT 使用 HS256，包含 `sub=userId`、`userId`、`mobile`、`jti`、`iat`、`exp`，TTL 为 7 天。
 
 ## 数据库迁移
 

@@ -1,0 +1,6 @@
+InternalServerError:
+  description: 服务器内部错误
+  content:
+    application/json:
+      schema: { $ref: './common-schemas.yaml#/ApiResponseInternalServerError' }
+      example: { code: 500, msg: 服务器内部错误, data: null }
