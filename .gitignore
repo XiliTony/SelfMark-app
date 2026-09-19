@@ -19,6 +19,8 @@ api/.codex/
 **/.env
 **/.env.*
 !**/.env.example
+!**/application-local.example.yml
+!**/application-local.example.yaml
 
 # IDE and editor metadata
 .idea/
@@ -34,6 +36,9 @@ api/.codex/
 *.log
 logs/
 *.pid
+/selfmark-before-compose.sql
+/selfmark-before-compose.sql.gz
+/backups/
 .DS_Store
 Thumbs.db
 

@@ -18,6 +18,8 @@ import org.springframework.data.redis.RedisConnectionFailureException;
 
 @ExtendWith(MockitoExtension.class)
 class TokenBlacklistServiceTests {
+    private static final String BLACKLIST_KEY = "selfmark:auth:jwt:blacklist:jti-1";
+
     @Mock StringRedisTemplate redis;
     @Mock ValueOperations<String, String> values;
 
@@ -28,22 +30,22 @@ class TokenBlacklistServiceTests {
 
         service.blacklist("jti-1", 42);
 
-        verify(values).set(eq("blacklist:jti-1"), eq("1"), eq(Duration.ofSeconds(42)));
+        verify(values).set(eq(BLACKLIST_KEY), eq("1"), eq(Duration.ofSeconds(42)));
     }
 
     @Test
     void checksRedisKeyAndDoesNotUseAnotherStore() {
-        when(redis.hasKey("blacklist:jti-1")).thenReturn(true);
+        when(redis.hasKey(BLACKLIST_KEY)).thenReturn(true);
 
         assertThat(new TokenBlacklistService(redis).isBlacklisted("jti-1")).isTrue();
-        verify(redis).hasKey("blacklist:jti-1");
+        verify(redis).hasKey(BLACKLIST_KEY);
     }
 
     @Test
     void failsClosedWhenRedisCannotStoreBlacklist() {
         when(redis.opsForValue()).thenReturn(values);
         doThrow(new RedisConnectionFailureException("Redis unavailable"))
-                .when(values).set("blacklist:jti-1", "1", Duration.ofSeconds(42));
+                .when(values).set(BLACKLIST_KEY, "1", Duration.ofSeconds(42));
 
         assertThatThrownBy(() -> new TokenBlacklistService(redis).blacklist("jti-1", 42))
                 .isInstanceOf(RedisConnectionFailureException.class);
@@ -51,7 +53,7 @@ class TokenBlacklistServiceTests {
 
     @Test
     void failsClosedWhenRedisCannotCheckBlacklist() {
-        when(redis.hasKey("blacklist:jti-1"))
+        when(redis.hasKey(BLACKLIST_KEY))
                 .thenThrow(new RedisConnectionFailureException("Redis unavailable"));
 
         assertThatThrownBy(() -> new TokenBlacklistService(redis).isBlacklisted("jti-1"))

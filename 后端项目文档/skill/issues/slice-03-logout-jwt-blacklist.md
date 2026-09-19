@@ -11,8 +11,8 @@ Slice 02 已确定手机号 `mobile` 为登录账号，请求、响应和 JWT �
 
 行为：
 
-- `POST /api/auth/logout`：需要鉴权。把当前 token 的 jti 加入 Redis 黑名单，key=`blacklist:{jti}`，value 任意（如 `1`），**TTL = token 剩余有效期**（即 `exp - now`，过期后自然消失）。返回成功即可。
-- 修改 Slice 01 的 JWT 拦截器：在签名/有效期校验通过后，**额外查 Redis 黑名单**——如果 `blacklist:{jti}` 存在，返回 401。
+- `POST /api/auth/logout`：需要鉴权。把当前 token 的 jti 加入 Redis 黑名单，key=`selfmark:auth:jwt:blacklist:{jti}`，value 任意（如 `1`），**TTL = token 剩余有效期**（即 `exp - now`，过期后自然消失）。返回成功即可。
+- 修改 Slice 01 的 JWT 拦截器：在签名/有效期校验通过后，**额外查 Redis 黑名单**——如果 `selfmark:auth:jwt:blacklist:{jti}` 存在，返回 401。
 - 黑名单只存 jti，不存整个 token（节省 Redis 内存）。
 - Redis 是黑名单运行依赖；Redis 写入或查询失败时请求失败，不使用 JVM 本地 Map 降级，避免单实例/多实例状态不一致和 fail-open。
 - 测试：登出后用旧 token 访问受保护接口返回 401；登出前 token 正常可用。
@@ -20,7 +20,7 @@ Slice 02 已确定手机号 `mobile` 为登录账号，请求、响应和 JWT �
 ## 验收标准
 
 - [x] `POST /api/auth/logout` 携带合法 token 返回成功
-- [x] 登出后 Redis 里 `blacklist:{jti}` 存在
+- [x] 登出后 Redis 里 `selfmark:auth:jwt:blacklist:{jti}` 存在
 - [x] 登出后用旧 token 访问 `/api/**` 返回 401
 - [x] 登出前同一 token 能正常访问
 - [x] TTL 设置正确：等于 token 剩余有效期（过期后 key 自动消失，不留垃圾）

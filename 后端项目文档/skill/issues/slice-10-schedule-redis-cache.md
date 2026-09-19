@@ -14,7 +14,7 @@
   - 返回字段：每个 subscription 一条，含 `{subscription_id, task_id, task_name, task_content, start_time, end_time}`。
   - 排序：按 start_time asc（按时段从早到晚）。
   - Redis 缓存逻辑：
-    - key = `schedule:{user_id}:{date}`，date 格式 `yyyy-MM-dd`
+    - key = `selfmark:schedule:{user_id}:{date}`，date 格式 `yyyy-MM-dd`
     - TTL = 到当天 23:59:59 的秒数（用 Redis 自带 EXPIRE 计算）
     - 缓存命中：直接返回缓存的 JSON
     - 缓存未命中：查 DB → 序列化为 JSON → 写入 Redis（带 TTL）→ 返回
@@ -30,7 +30,7 @@
 - [ ] schedule 只返回 enabled=1 的 subscription（enabled=0 不出现）
 - [ ] schedule 不返回孤儿 subscription（对应 task 不存在的行不出现）
 - [ ] 同一用户同一天多次调 schedule 返回**完全相同**的 JSON（包括字段顺序）
-- [ ] 首次调 schedule 后 Redis 里有 `schedule:{user_id}:{date}` key
+- [ ] 首次调 schedule 后 Redis 里有 `selfmark:schedule:{user_id}:{date}` key
 - [ ] 该 key 的 TTL 到当天 23:59:59 失效
 - [ ] 模拟作者当天创建新 SHARED Task 后用户再拉 schedule，仍返回旧版（缓存命中）
 - [ ] 模拟作者当天改自己 PRIVATE Task 的 name 后用户再拉 schedule，仍返回旧 name（缓存命中）

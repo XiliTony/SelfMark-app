@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class TokenBlacklistService {
-    private static final String KEY_PREFIX = "blacklist:";
+    private static final String KEY_PREFIX = "selfmark:auth:jwt:blacklist:";
 
     private final StringRedisTemplate redis;
 

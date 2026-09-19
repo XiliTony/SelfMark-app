@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3307/selfmark?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false
+    username: selfmark
+    password: "123456"
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+selfmark:
+  jwt:
+    # Generate a unique value with at least 32 characters; never commit the real value.
+    secret: replace-with-a-random-secret-at-least-32-characters

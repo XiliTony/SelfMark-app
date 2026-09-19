@@ -4,7 +4,7 @@
 
 - 完成日期：2026-09-12
 - 接口：`POST /api/auth/logout`
-- 存储：Redis DB 0，key=`blacklist:{jti}`，value=`1`
+- 存储：Redis DB 0，key=`selfmark:auth:jwt:blacklist:{jti}`，value=`1`
 - 失效规则：TTL 等于 JWT 的 `exp - 登出时间`
 - 验收：已使用 Apifox、Navicat 和 Another Redis Desktop Manager 手动验证
 
@@ -37,7 +37,7 @@ Auth 面板会自动生成请求头，因此 Headers 面板不要再手工添加
 - JWT 签发时包含唯一 `jti` 和过期时间 `exp`。
 - 拦截器先调用 JWT verifier 校验签名和有效期；过期或非法 token 直接返回 401，不访问 Redis。
 - JWT 有效后，拦截器只按 jti 查询 Redis；命中黑名单返回 401，否则建立当前用户上下文。
-- 登出接口从当前用户上下文取得 jti 和原始 token，将 `blacklist:{jti}=1` 写入 Redis。
+- 登出接口从当前用户上下文取得 jti 和原始 token，将 `selfmark:auth:jwt:blacklist:{jti}=1` 写入 Redis。
 - Redis TTL 使用登出时计算的 token 剩余有效秒数。TTL 到期后 key 自动消失，不保存完整 token，也不使用数据库兜底。
 - Redis 不可用时认证链路不能放行无法确认状态的 token；当前实现保持 fail-closed。
 
@@ -45,7 +45,7 @@ Auth 面板会自动生成请求头，因此 Headers 面板不要再手工添加
 
 - 登出前使用 token 访问 `/api/users/me` 返回 200。
 - 携带有效 token 调用 `/api/auth/logout` 返回 200。
-- Another Redis Desktop Manager 可看到 `blacklist:{jti}`、value=`1` 和正数 TTL。
+- Another Redis Desktop Manager 可看到 `selfmark:auth:jwt:blacklist:{jti}`、value=`1` 和正数 TTL。
 - 登出后使用同一 token 访问受保护接口返回 401，重复登出也返回 401。
 - 使用短 TTL token 验证：未登出的过期 token 由 JWT 校验返回 401；登出 key 在 TTL 到期后由 Redis 自动删除。
 
@@ -63,4 +63,4 @@ Auth 面板会自动生成请求头，因此 Headers 面板不要再手工添加
 
 ## 简历技术描述（Slice 03）
 
-实现 JWT 登出闭环：拦截器先校验签名与 exp，再以 jti 查询 Redis 黑名单；登出仅写入 `blacklist:{jti}`，并将 TTL 设置为 token 剩余有效期，使旧 token 立即返回 401、黑名单到期自动清理，避免数据库存储和垃圾 key。
+实现 JWT 登出闭环：拦截器先校验签名与 exp，再以 jti 查询 Redis 黑名单；登出仅写入 `selfmark:auth:jwt:blacklist:{jti}`，并将 TTL 设置为 token 剩余有效期，使旧 token 立即返回 401、黑名单到期自动清理，避免数据库存储和垃圾 key。

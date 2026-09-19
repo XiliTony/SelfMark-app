@@ -172,7 +172,7 @@ subscription
 | POST | /api/subscriptions | 是 | body: {task_id, start_time, end_time}；订阅市场上的 Task（仅可订阅 SYSTEM 或 SHARED）；(user_id, task_id) 唯一约束；Private Task 不可被非作者订阅 |
 | DELETE | /api/subscriptions/{id} | 是 | 取消订阅；仅当 user_id=me 通过 |
 | PUT | /api/subscriptions/{id} | 是 | body: {start_time?, end_time?, enabled?}；修改自己的订阅；仅当 user_id=me 通过 |
-| GET | /api/subscriptions/schedule | 是 | 返回当日 schedule：该用户所有 enabled=1 的 Subscription，JOIN task 表取 name/content，按 start_time asc 排序；Redis 缓存 key=`schedule:{user_id}:{date}` TTL 到当天 23:59:59 |
+| GET | /api/subscriptions/schedule | 是 | 返回当日 schedule：该用户所有 enabled=1 的 Subscription，JOIN task 表取 name/content，按 start_time asc 排序；Redis 缓存 key=`selfmark:schedule:{user_id}:{date}` TTL 到当天 23:59:59 |
 
 ### 关键架构决策
 
@@ -184,7 +184,7 @@ subscription
 6. **跨天任务 v1 不支持**：subscription.start_time < end_time 由应用层校验。睡眠任务等跨天场景留给 v2 专门设计。
 7. **APP 每日 schedule 单次拉取 + 用户主动下拉刷新**：APP 当天首次打开拉一次 schedule 存本地（SharedPreferences/SQLite），注册本地通知后当天不再拉；用户可下拉刷新强制重新拉。后端 Redis 缓存 schedule 接口到当天 23:59，保证同一天多次拉取结果一致（避免作者当天创建新 SHARED Task 导致当天 schedule 抖动）。
 8. **订阅级别暂停，无全局暂停**：subscription.enabled 字段控制单条订阅是否进 schedule；v1 不在 user 表加 pause_all 之类字段。全局"今日勿扰"由 APP 端实现（不调 schedule/不注册本地通知）。
-9. **JWT 单 token + Redis 黑名单**：登录返回单个 JWT，TTL 较长（如 7 天）；登出时把 token 的 jti 加入 Redis 黑名单（key=`blacklist:{jti}`，TTL=token 剩余有效期），JWT 拦截器每次请求查黑名单。不引入 refresh token，简化 v1。
+9. **JWT 单 token + Redis 黑名单**：登录返回单个 JWT，TTL 较长（如 7 天）；登出时把 token 的 jti 加入 Redis 黑名单（key=`selfmark:auth:jwt:blacklist:{jti}`，TTL=token 剩余有效期），JWT 拦截器每次请求查黑名单。不引入 refresh token，简化 v1。
 10. **不引入 MQ**：APP 本地通知方案下后端不需要到点调度推送，MQ 无角色。未来转服务端推送时再引入。
 11. **不引入版本化**：作者不能改 SHARED Task，所以不需要 task 表 version 字段；订阅是引用自然跟随（但 SHARED 冻结意味着实际上不会跟随）。
 12. **APP 本地通知 + 后端只下发 schedule**：后端不做定时调度推送，只下发当日 schedule 给 APP，APP 用 Flutter 本地通知插件注册当天 Time Window 起点+终点的本地通知。
