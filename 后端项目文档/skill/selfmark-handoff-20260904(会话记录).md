@@ -33,7 +33,7 @@
 4. **用户删任务**：曾提"撤回共享"方案，最终废弃，SHARED 无任何删除/修改路径
 5. **日级冻结**：APP 每天首次打开拉一次 schedule 存本地，用户可选下拉刷新（决策 C）；后端 Redis 缓存到当天 23:59
 6. **v1 明确不做**：完成记录/打卡、跨天任务（end>start 校验）、全局暂停、社交、MQ、服务端推送、refresh token（单 token + Redis 黑名单）、任务版本化
-7. **登录**：手机号作为账号 + 密码（bcrypt），JWT 单 token 7 天 TTL，登出 token jti 入 Redis 黑名单；该条已按 2026-09-12 的 Slice 02 方案更新
+7. **登录**：用户名 + 密码（bcrypt），JWT 单 token 7 天 TTL，登出 token jti 入 Redis 黑名单
 
 ### 2.2 已产出文档（都在 `e:\SelfMarkProject\skill\`）
 

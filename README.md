@@ -13,7 +13,10 @@ SelfMark是一个习惯和反拖延应用程序。v1 后端提供
 ```text
 api/                         Spring Boot API, Flyway migrations, tests
 api/docs/openapi/             Modular OpenAPI source and generated distribution
-api/src/main/resources/db/    Versioned Flyway migrations
+api/src/main/resources/db/migration/  Versioned Flyway migrations and production schema
+api/src/main/resources/db/devdata/    Local/test profile seed for Apifox and frontend integration
+api/src/test/resources/db/fixture/    Test-only SQL fixtures
+agent/                       Independent future Python Agent workspace
 view/                         Flutter client (created/maintained separately)
 compose.yaml                  Local MySQL, Redis, optional RabbitMQ
 ```
@@ -26,7 +29,29 @@ The API is the only service the client calls. The client never connects directly
 2. Copy `api/src/main/resources/application-local.example.yml` to `api/src/main/resources/application-local.yml`.
 3. Replace `selfmark.jwt.secret` in `application-local.yml` with a unique random value of at least 32 characters.
 4. Start MySQL and Redis with `docker compose up -d`.
-5. Start the API from `api/` with `./mvnw spring-boot:run` or run it from IntelliJ IDEA.
+5. Start the API from `api/` with the explicit local profile:
+
+   ```powershell
+   .\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=local"
+   ```
+
+   In IntelliJ IDEA, set Active profiles to `local` in the Spring Boot run configuration, or add
+   `--spring.profiles.active=local` to the program arguments. This runs Flyway migrations first and
+   then loads the committed fictional `db/devdata` seed; no backup import is needed for frontend
+   integration.
+
+The public integration account is `13800138001` with password `Password123`. It is fictional and
+must only be used against a local development database.
+
+For production, provide database, Redis, and JWT settings through the deployment environment and
+start with the `prod` profile:
+
+```bash
+java -jar <api-jar> --spring.profiles.active=prod
+```
+
+The default and `prod` profiles load only `classpath:db/migration`. They never load local config,
+`db/devdata`, test fixtures, or `backups/`.
 
 RabbitMQ is optional until a feature needs it:
 

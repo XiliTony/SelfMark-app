@@ -4,6 +4,17 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+# API-local build, profile and generated data
+**/application-local.yml
+**/application-local.yaml
+**/application-prod.yml
+**/application-prod.yaml
+docs/openapi/.tmp/
+*.log
+logs/
+*.pid
+src/main/resources/db/devdata/local/
+
 ### STS ###
 .apt_generated
 .classpath

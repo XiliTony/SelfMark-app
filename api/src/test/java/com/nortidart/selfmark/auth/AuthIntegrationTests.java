@@ -17,6 +17,7 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.containers.GenericContainer;
@@ -29,6 +30,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
         "management.health.redis.enabled=false"
 })
 @AutoConfigureMockMvc
+@Sql(scripts = "/db/fixture/auth-user.sql")
 @Testcontainers(disabledWithoutDocker = true)
 class AuthIntegrationTests {
     @Container
@@ -56,6 +58,13 @@ class AuthIntegrationTests {
 
     @Test
     void registerLoginAndAuthenticationCompleteTheHttpDatabaseLoop() throws Exception {
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM user WHERE mobile = ?", Integer.class, "13800138009"))
+                .isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM user WHERE mobile = ?", Integer.class, "13800138001"))
+                .isZero();
+
         String registerJson = """
                 {"mobile":"13800138000","password":"Password123","username":"Integration"}
                 """;

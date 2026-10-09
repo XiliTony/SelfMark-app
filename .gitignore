@@ -1,21 +1,11 @@
 # Local planning materials and AI-agent workspace files
-/Acquirement/
 /.agents/
-/openspec/
 /skills-lock.json
 api/.codex/
 /后端项目文档/skill/本地验收记录/
 /后端项目文档/团队开发总要求.md
 
-# Maven build output
-**/target/
-/api/docs/openapi/.tmp/
-
 # Sensitive local configuration
-**/application-local.yml
-**/application-local.yaml
-**/application-prod.yml
-**/application-prod.yaml
 **/.env
 **/.env.*
 !**/.env.example
