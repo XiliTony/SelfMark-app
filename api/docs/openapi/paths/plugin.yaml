@@ -1,0 +1,316 @@
+/api/plugins:
+  get:
+    summary: 查询插件市场
+    description: 返回全部平台插件及当前用户安装状态，按sort、目录ID升序；未安装插件的实例ID、enabled、config显式为null。用户身份来自JWT。
+    operationId: listPluginMarket
+    tags: [插件市场]
+    security: [{ bearerAuth: [] }]
+    responses:
+      '200':
+        description: 市场查询成功；空目录返回空数组。
+        content:
+          application/json:
+            schema: { $ref: '../components/plugin-schemas.yaml#/ApiResponsePluginMarket' }
+            examples:
+              uninstalled:
+                summary: 当前用户未安装插件
+                value:
+                  code: 200
+                  msg: success
+                  data:
+                    - { id: 1, code: quadrant-board, name: 画板, description: null, sort: 1, installed: false, userPluginId: null, enabled: null, config: null }
+                    - { id: 2, code: pomodoro, name: 番茄钟, description: null, sort: 2, installed: false, userPluginId: null, enabled: null, config: null }
+              disabled:
+                summary: 已安装但禁用的实例仍返回配置
+                value:
+                  code: 200
+                  msg: success
+                  data:
+                    - { id: 1, code: quadrant-board, name: 画板, description: null, sort: 1, installed: false, userPluginId: null, enabled: null, config: null }
+                    - { id: 2, code: pomodoro, name: 番茄钟, description: null, sort: 2, installed: true, userPluginId: 10, enabled: false, config: { label: 专注 } }
+      '401':
+        description: token缺失、无效、过期或已登出。
+        content:
+          application/json:
+            schema: { $ref: '../components/common-schemas.yaml#/ApiResponseUnauthorized' }
+            example: { code: 401, msg: 未登录, data: null }
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/api/user-plugins/{id}/config:
+  put:
+    summary: 整体替换插件配置
+    description: JWT用户仅可更新本人实例。请求体就是完整配置对象，不合并、不校验内部字段或补默认值；遗漏的旧字段被删除，空对象清空配置，顶层config键按字面存储。启用状态、归属、目录和ID不变，禁用实例也可配置；提交相同配置仍返回200。事务内锁定实例并只写config，相同字段按最后成功写入覆盖，不提供版本冲突检测。
+    operationId: replacePluginConfig
+    tags: [插件实例]
+    security: [{ bearerAuth: [] }]
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: 用户插件实例ID，必须是Java Long范围内的正整数；不是目录ID。
+        schema: { type: integer, format: int64, minimum: 1, example: 11 }
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: { $ref: '../components/plugin-schemas.yaml#/PluginConfig' }
+          examples:
+            board:
+              summary: 切换结构，显式提交两种结构保留其命名
+              value:
+                active: pyramid
+                quadrant:
+                  xAxisLabel: 截止时间
+                  yAxisLabel: 影响程度
+                  regions:
+                    - { key: q1, name: 马上办 }
+                    - { key: q2, name: 计划办 }
+                    - { key: q3, name: 协作办 }
+                    - { key: q4, name: 稍后办 }
+                pyramid:
+                  regions:
+                    - { key: p1, name: 年度目标 }
+                    - { key: p2, name: 月度计划 }
+                    - { key: p3, name: 每日行动 }
+            arbitrary:
+              summary: 自由对象，未知字段和内部null合法
+              value: { foo: 1, nested: { items: [true, null, 中文] }, preciseDecimal: '0.123456789012345678' }
+            empty:
+              summary: 清空全部旧字段
+              value: {}
+            literal:
+              summary: config键是配置数据的一部分，不自动解包
+              value: { config: { foo: 1 } }
+    responses:
+      '200':
+        description: 返回更新后的完整实例，enabled保持原值；同值更新也成功。
+        content:
+          application/json:
+            schema: { $ref: '../components/plugin-schemas.yaml#/ApiResponseInstalledPlugin' }
+            example:
+              code: 200
+              msg: success
+              data: { id: 11, pluginId: 1, code: quadrant-board, name: 画板, config: { foo: 1, nested: { items: [true, null, 中文] } }, enabled: false }
+      '400':
+        description: 缺少或坏JSON请求体、根非对象、ID不是正整数Long或超出范围。
+        content:
+          application/json:
+            schema: { $ref: '../components/common-schemas.yaml#/ApiResponseBadRequest' }
+            examples:
+              syntax: { value: { code: 400, msg: 请求体格式错误, data: null } }
+              root: { value: { code: 400, msg: config 必须是 JSON 对象, data: null } }
+              id: { value: { code: 400, msg: id 必须是正整数, data: null } }
+      '401':
+        description: token缺失、无效、过期或已登出。
+        content:
+          application/json:
+            schema: { $ref: '../components/common-schemas.yaml#/ApiResponseUnauthorized' }
+            example: { code: 401, msg: 未登录, data: null }
+      '403':
+        description: 合法请求的实例属于其他用户；不改变该实例。
+        content:
+          application/json:
+            schema: { $ref: '../components/common-schemas.yaml#/ApiResponseForbidden' }
+            example: { code: 403, msg: 无权操作该插件实例, data: null }
+      '404':
+        description: 合法正整数ID对应的实例不存在。
+        content:
+          application/json:
+            schema: { $ref: '../components/common-schemas.yaml#/ApiResponseNotFound' }
+            example: { code: 404, msg: 插件实例不存在, data: null }
+      '415':
+        description: Content-Type不是application/json；不执行更新。
+        content:
+          application/json:
+            schema: { $ref: '../components/common-schemas.yaml#/ApiResponseUnsupportedMediaType' }
+            example: { code: 415, msg: 仅支持 application/json, data: null }
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/api/user-plugins/{id}/enabled:
+  put:
+    summary: 启用或禁用插件实例
+    description: 仅当前JWT用户可操作本人实例。enabled必须是JSON布尔值，额外字段忽略；事务内锁定实例，只更新enabled，完整保留config、归属及ID。重复设置当前状态返回200。禁用后市场installed仍为true且重复安装409，配置仍可更新。
+    operationId: setPluginEnabled
+    tags: [插件实例]
+    security: [{ bearerAuth: [] }]
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: 用户实例ID，不是目录ID；必须为Java Long范围内的正整数。
+        schema: { type: integer, format: int64, minimum: 1, example: 11 }
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: { $ref: '../components/plugin-schemas.yaml#/PluginEnabledRequest' }
+          examples:
+            disable: { summary: 禁用但保留配置, value: { enabled: false } }
+            enable: { summary: 启用且保留配置, value: { enabled: true } }
+    responses:
+      '200':
+        description: 返回启停后的完整实例；相同状态也成功，config保持原值。
+        content:
+          application/json:
+            schema: { $ref: '../components/plugin-schemas.yaml#/ApiResponseInstalledPlugin' }
+            example:
+              code: 200
+              msg: success
+              data: { id: 11, pluginId: 1, code: quadrant-board, name: 画板, config: { foo: 1 }, enabled: false }
+      '400':
+        description: 空/坏JSON请求体，根非对象或enabled缺失/null/字符串/数字/数组/对象，非法或溢出的ID。
+        content:
+          application/json:
+            schema: { $ref: '../components/common-schemas.yaml#/ApiResponseBadRequest' }
+            examples:
+              syntax: { value: { code: 400, msg: 请求体格式错误, data: null } }
+              enabled: { value: { code: 400, msg: enabled 必须是布尔值, data: null } }
+              id: { value: { code: 400, msg: id 必须是正整数, data: null } }
+      '401':
+        description: token缺失、无效、过期或已登出。
+        content:
+          application/json:
+            schema: { $ref: '../components/common-schemas.yaml#/ApiResponseUnauthorized' }
+            example: { code: 401, msg: 未登录, data: null }
+      '403':
+        description: 合法请求的实例属于其他用户，实例不变。
+        content:
+          application/json:
+            schema: { $ref: '../components/common-schemas.yaml#/ApiResponseForbidden' }
+            example: { code: 403, msg: 无权操作该插件实例, data: null }
+      '404':
+        description: 合法正整数ID对应实例不存在，包括已卸载旧ID。
+        content:
+          application/json:
+            schema: { $ref: '../components/common-schemas.yaml#/ApiResponseNotFound' }
+            example: { code: 404, msg: 插件实例不存在, data: null }
+      '415':
+        description: Content-Type不是application/json，不执行更新。
+        content:
+          application/json:
+            schema: { $ref: '../components/common-schemas.yaml#/ApiResponseUnsupportedMediaType' }
+            example: { code: 415, msg: 仅支持 application/json, data: null }
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/api/user-plugins/{id}:
+  delete:
+    summary: 卸载插件实例
+    description: 仅当前JWT用户可删除本人实例。无需请求体；事务内锁定读取并检查归属后物理DELETE，不删除平台目录。成功后市场显示未安装且实例ID、enabled、config为null。重复DELETE和对旧ID更新返回404；重新安装生成新ID、完整默认config和enabled=true，不恢复旧自定义配置。没有软删除、恢复或子表级联协议。
+    operationId: uninstallPlugin
+    tags: [插件实例]
+    security: [{ bearerAuth: [] }]
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: 用户实例ID，不是目录ID；必须为Java Long范围内的正整数。
+        schema: { type: integer, format: int64, minimum: 1, example: 11 }
+    responses:
+      '200':
+        description: 实例已物理删除，data显式null；不使用204。
+        content:
+          application/json:
+            schema: { $ref: '../components/common-schemas.yaml#/ApiResponseEmpty' }
+            example: { code: 200, msg: success, data: null }
+      '400':
+        description: 非整数、Long溢出、0或负数ID。
+        content:
+          application/json:
+            schema: { $ref: '../components/common-schemas.yaml#/ApiResponseBadRequest' }
+            example: { code: 400, msg: id 必须是正整数, data: null }
+      '401':
+        description: token缺失、无效、过期或已登出。
+        content:
+          application/json:
+            schema: { $ref: '../components/common-schemas.yaml#/ApiResponseUnauthorized' }
+            example: { code: 401, msg: 未登录, data: null }
+      '403':
+        description: 实例属于其他用户，不执行删除。
+        content:
+          application/json:
+            schema: { $ref: '../components/common-schemas.yaml#/ApiResponseForbidden' }
+            example: { code: 403, msg: 无权操作该插件实例, data: null }
+      '404':
+        description: 实例不存在，包括重复卸载或重装后的旧ID。
+        content:
+          application/json:
+            schema: { $ref: '../components/common-schemas.yaml#/ApiResponseNotFound' }
+            example: { code: 404, msg: 插件实例不存在, data: null }
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/api/plugins/{code}/install:
+  post:
+    summary: 安装插件
+    description: 使用JWT中的用户身份、精确且区分大小写的目录code创建实例；无需请求体，客户端不能指定归属、默认配置或enabled。成功返回HTTP200及完整默认配置，enabled=true。同用户同插件只能安装一次，已禁用仍返回409且保留原实例；并发安装由数据库唯一键保护。目录存在但缺少默认配置时返回500，不留下实例。
+    operationId: installPlugin
+    tags: [插件市场]
+    security: [{ bearerAuth: [] }]
+    parameters:
+      - name: code
+        in: path
+        required: true
+        description: 精确目录标识；不转换大小写或去除空白。
+        schema: { type: string, example: quadrant-board }
+    responses:
+      '200':
+        description: 安装成功；id是新实例ID，pluginId是目录ID。
+        content:
+          application/json:
+            schema: { $ref: '../components/plugin-schemas.yaml#/ApiResponseInstalledPlugin' }
+            examples:
+              board:
+                summary: 画板完整默认配置
+                value:
+                  code: 200
+                  msg: success
+                  data:
+                    id: 11
+                    pluginId: 1
+                    code: quadrant-board
+                    name: 画板
+                    enabled: true
+                    config:
+                      active: quadrant
+                      quadrant:
+                        xAxisLabel: 紧急度
+                        yAxisLabel: 重要度
+                        regions:
+                          - { key: q1, name: 重要且紧急 }
+                          - { key: q2, name: 重要不紧急 }
+                          - { key: q3, name: 紧急不重要 }
+                          - { key: q4, name: 不重要不紧急 }
+                      pyramid:
+                        regions:
+                          - { key: p1, name: 顶层目标 }
+                          - { key: p2, name: 中层计划 }
+                          - { key: p3, name: 底层行动 }
+              pomodoro:
+                summary: 番茄钟默认配置
+                value:
+                  code: 200
+                  msg: success
+                  data: { id: 12, pluginId: 2, code: pomodoro, name: 番茄钟, config: { label: 专注 }, enabled: true }
+      '401':
+        description: token缺失、无效、过期或已登出。
+        content:
+          application/json:
+            schema: { $ref: '../components/common-schemas.yaml#/ApiResponseUnauthorized' }
+            example: { code: 401, msg: 未登录, data: null }
+      '404':
+        description: 精确code查不到目录，包括大小写不匹配。
+        content:
+          application/json:
+            schema: { $ref: '../components/common-schemas.yaml#/ApiResponseNotFound' }
+            example: { code: 404, msg: 插件不存在, data: null }
+      '409':
+        description: 已安装或并发INSERT触发唯一冲突；不修改原实例。
+        content:
+          application/json:
+            schema: { $ref: '../components/common-schemas.yaml#/ApiResponseConflict' }
+            example: { code: 409, msg: 插件已安装, data: null }
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'

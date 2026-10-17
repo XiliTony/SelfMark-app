@@ -1,0 +1,88 @@
+MarketPlugin:
+  type: object
+  required: [id, code, name, description, sort, installed, userPluginId, enabled, config]
+  properties:
+    id:
+      type: integer
+      format: int64
+      description: 平台插件目录ID，不是用户实例ID。
+      example: 1
+    code:
+      type: string
+      maxLength: 50
+      description: 稳定且区分大小写的插件标识。
+      example: quadrant-board
+    name: { type: string, maxLength: 50, example: 画板 }
+    description: { type: string, maxLength: 500, nullable: true, example: null }
+    sort: { type: integer, description: 升序排列，同值按目录ID升序。, example: 1 }
+    installed: { type: boolean, description: 禁用实例仍视为已安装。, example: false }
+    userPluginId:
+      type: integer
+      format: int64
+      nullable: true
+      description: 当前用户的实例ID，未安装时显式null。
+      example: null
+    enabled:
+      type: boolean
+      nullable: true
+      description: 已安装时为布尔值，未安装时显式null。
+      example: null
+    config:
+      type: object
+      additionalProperties: true
+      nullable: true
+      description: 当前用户的完整配置对象，未安装时显式null；不是JSON字符串。数值采用MySQL JSON原生精度，高精度值需作为对象中的字符串保存。
+      example: null
+
+ApiResponsePluginMarket:
+  type: object
+  required: [code, msg, data]
+  properties:
+    code: { type: integer, enum: [200], example: 200 }
+    msg: { type: string, example: success }
+    data:
+      type: array
+      items: { $ref: '#/MarketPlugin' }
+
+InstalledPlugin:
+  type: object
+  required: [id, pluginId, code, name, config, enabled]
+  properties:
+    id:
+      type: integer
+      format: int64
+      description: 当前用户的插件实例ID，不是目录ID。
+      example: 11
+    pluginId:
+      type: integer
+      format: int64
+      description: 平台插件目录ID。
+      example: 1
+    code: { type: string, maxLength: 50, example: quadrant-board }
+    name: { type: string, maxLength: 50, example: 画板 }
+    config:
+      type: object
+      additionalProperties: true
+      description: 完整配置对象；安装时使用服务端默认值。数值采用MySQL JSON原生精度，高精度值需作为字符串保存。
+    enabled: { type: boolean, description: 当前启用状态；安装成功时为true，配置更新保持原值，启停仅更新此字段。, example: true }
+
+PluginEnabledRequest:
+  type: object
+  required: [enabled]
+  additionalProperties: true
+  description: enabled必须是JSON布尔值；不转换字符串或数字。其他字段忽略，不修改config、归属、ID或目录关联。
+  properties:
+    enabled: { type: boolean, description: true启用，false禁用；重复提交当前状态仍成功。, example: false }
+
+PluginConfig:
+  type: object
+  additionalProperties: true
+  description: 完整配置对象本身，不使用config包装。允许未知字段、嵌套数组/null及空对象；整体替换，不合并或补默认值，无4KB业务限制。数值采用MySQL JSON原生精度，高精度值应以JSON字符串表达。
+
+ApiResponseInstalledPlugin:
+  type: object
+  required: [code, msg, data]
+  properties:
+    code: { type: integer, enum: [200], example: 200 }
+    msg: { type: string, example: success }
+    data: { $ref: '#/InstalledPlugin' }

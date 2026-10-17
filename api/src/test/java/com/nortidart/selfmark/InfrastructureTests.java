@@ -7,6 +7,8 @@ import com.nortidart.selfmark.common.exception.BusinessException;
 import com.nortidart.selfmark.common.response.ApiResponse;
 import com.nortidart.selfmark.auth.security.JwtUtil;
 import com.nortidart.selfmark.auth.mapper.UserMapper;
+import com.nortidart.selfmark.plugin.mapper.PluginMapper;
+import com.nortidart.selfmark.plugin.mapper.UserPluginMapper;
 import com.nortidart.selfmark.auth.service.TokenBlacklistService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +49,12 @@ class InfrastructureTests {
 
     @MockitoBean
     UserMapper userMapper;
+
+    @MockitoBean
+    PluginMapper pluginMapper;
+
+    @MockitoBean
+    UserPluginMapper userPluginMapper;
 
     @MockitoBean
     TokenBlacklistService tokenBlacklistService;

@@ -45,12 +45,33 @@ ApiResponseConflict:
       properties:
         code: { type: integer, enum: [409], example: 409 }
 
+ApiResponseNotFound:
+  allOf:
+    - $ref: '#/ApiResponseError'
+    - type: object
+      properties:
+        code: { type: integer, enum: [404], example: 404 }
+
 ApiResponseInternalServerError:
   allOf:
     - $ref: '#/ApiResponseError'
     - type: object
       properties:
         code: { type: integer, enum: [500], example: 500 }
+
+ApiResponseForbidden:
+  allOf:
+    - $ref: '#/ApiResponseError'
+    - type: object
+      properties:
+        code: { type: integer, enum: [403], example: 403 }
+
+ApiResponseUnsupportedMediaType:
+  allOf:
+    - $ref: '#/ApiResponseError'
+    - type: object
+      properties:
+        code: { type: integer, enum: [415], example: 415 }
 
 ApiResponseHealth:
   type: object
