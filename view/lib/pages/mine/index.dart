@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:view/stores/TokenManager.dart';
 import 'package:view/stores/UserController.dart';
-import 'package:view/viewmodels/user.dart';
 
-class MineView extends StatefulWidget {
-  const MineView({super.key});
+class MinePage extends StatefulWidget {
+  const MinePage({super.key});
 
   @override
-  _MineViewState createState() => _MineViewState();
+  _MinePageState createState() => _MinePageState();
 }
 
-class _MineViewState extends State<MineView> {
+class _MinePageState extends State<MinePage> {
   // 从全局拿用户控制器（MainPage里已经Get.put注册过了）
   final UserController _userController = Get.find<UserController>();
 
@@ -36,10 +34,9 @@ class _MineViewState extends State<MineView> {
                       ),
                       TextButton(
                         onPressed: () async {
-                          // 清除Getx 删除token
-                          await tokenManager.removeToken();
-                          // Getx内存数据
-                          _userController.updateUserInfo(UserInfo.fromJSON({}));
+                          // 让后端把 token 加入黑名单，再清本地登录态
+                          await _userController.logout();
+                          if (!mounted) return;
                           Navigator.pop(context);
                         },
                         child: Text("确认"),
@@ -55,20 +52,20 @@ class _MineViewState extends State<MineView> {
   }
 
   // 隐藏手机号中间4位，保护隐私（如 138****1234）
-  String _maskAccount(String account) {
-    if (account.length == 11) {
+  String _maskMobile(String mobile) {
+    if (mobile.length == 11) {
       // substring(0, 3) → 取索引 0、1、2，即前 3 位
       // substring(7)    → 从索引 7 取到末尾，即后 4 位
-      return '${account.substring(0, 3)}****${account.substring(7)}';
+      return '${mobile.substring(0, 3)}****${mobile.substring(7)}';
     }
     // 非标准长度：保留首尾各1位，中间用*代替
     // substring(0, 1)                   → 取索引 0，即第 1 位
-    // '*' * (account.length - 2)        → 中间位数，用 * 重复拼接
-    // substring(account.length - 1)     → 从倒数第 1 位取到末尾，即最后 1 位
-    if (account.length > 2) {
-      return '${account.substring(0, 1)}${'*' * (account.length - 2)}${account.substring(account.length - 1)}';
+    // '*' * (mobile.length - 2)        → 中间位数，用 * 重复拼接
+    // substring(mobile.length - 1)     → 从倒数第 1 位取到末尾，即最后 1 位
+    if (mobile.length > 2) {
+      return '${mobile.substring(0, 1)}${'*' * (mobile.length - 2)}${mobile.substring(mobile.length - 1)}';
     }
-    return account;
+    return mobile;
   }
 
   Widget _buildHeader() {
@@ -113,8 +110,8 @@ class _MineViewState extends State<MineView> {
                 SizedBox(height: 6),
                 // Obx监听响应式数据：登录后手机号自动刷新（已脱敏显示）
                 Obx(() => Text(
-                  _userController.user.value.account.isNotEmpty
-                      ? _maskAccount(_userController.user.value.account)
+                  _userController.user.value.mobile.isNotEmpty
+                      ? _maskMobile(_userController.user.value.mobile)
                       : '',
                 )),
               ],

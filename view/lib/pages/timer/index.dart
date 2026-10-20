@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 
-class TimerView extends StatefulWidget {
-  const TimerView({super.key});
+class TimerPage extends StatefulWidget {
+  const TimerPage({super.key});
 
   @override
-  _TimerViewState createState() => _TimerViewState();
+  _TimerPageState createState() => _TimerPageState();
 }
 
-class _TimerViewState extends State<TimerView> {
+class _TimerPageState extends State<TimerPage> {
   @override
   Widget build(BuildContext context) {
-    return  Center(
-      child: Text('定时器'),
+    return Center(
+      child: Text('小智助手'),
     );
   }
 }

@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:view/api/user.dart';
 import 'package:view/pages/market/index.dart';
 import 'package:view/pages/mine/index.dart';
-import 'package:view/pages/plugin/index.dart';
+import 'package:view/pages/home/index.dart';
 import 'package:view/pages/timer/index.dart';
-import 'package:view/stores/TokenManager.dart';
 import 'package:view/stores/UserController.dart';
 
 class MainPage extends StatefulWidget {
@@ -25,17 +23,17 @@ class _MainPageState extends State<MainPage> {
       "active_icon": 'lib/assets/tab/market_active.png', // 选中状态图标
       "name": '插件市场', // 标签名称
     },
-    // 我的插件标签
+    // 我的APP标签
     {
-      "icon": 'lib/assets/tab/plugin_normal.png',
-      "active_icon": 'lib/assets/tab/plugin_active.png',
-      "name": '我的插件',
+      "icon": 'lib/assets/tab/app_normal.png',
+      "active_icon": 'lib/assets/tab/app_active.png',
+      "name": '我的APP',
     },
     // 计时器标签
     {
-      "icon": 'lib/assets/tab/clock-fill_normal.png',
-      "active_icon": 'lib/assets/tab/clock-fill_active.png',
-      "name": '计时器',
+      "icon": 'lib/assets/tab/ai_normal.png',
+      "active_icon": 'lib/assets/tab/ai_active.png',
+      "name": '小智助手',
     },
     // 个人标签
     {
@@ -47,31 +45,18 @@ class _MainPageState extends State<MainPage> {
 
   int _currentIndex = 0;
 
-  // 全局注册用户控制器（IndexedStack下四个页面都能通过Get.find拿到）
-  final UserController _userController = Get.put(UserController());
-
-  // 恢复登录状态：token有值说明之前登录过，拉取用户信息回显
-  Future<void> _initUser() async {
-    await tokenManager.init(); // 初始化token
-    if (tokenManager.getToken().isNotEmpty) {
-      // 如果token有值就获取用户信息
-      try {
-        _userController.updateUserInfo(await getUserInfoAPI());
-      } catch (e) {
-        // token过期/失效时静默失败，停留在未登录状态
-        tokenManager.removeToken();
-      }
-    }
-  }
+  // 全局状态已在 main() 中注册，这里直接取用（IndexedStack下四个页面共享）
+  final UserController _userController = Get.find<UserController>();
 
   @override
   void initState() {
     super.initState();
-    _initUser();
+    // 恢复登录态：token 有值就拉用户信息，市场页会监听登录态自动加载插件
+    _userController.restore();
   }
 
   List<Widget> _getChildren() {
-    return [MarketView(), PluginView(), TimerView(), MineView()];
+    return [MarketPage(), PluginPage(), TimerPage(), MinePage()];
   }
 
   List<BottomNavigationBarItem> _getTabBarWidget() {

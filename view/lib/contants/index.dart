@@ -12,4 +12,11 @@ class HttpConstants {
   static const String REGISTER = "/api/auth/register"; // 注册请求地址
   static const String LOGOUT = "/api/auth/logout"; // 退出登录地址
   static const String USER_PROFILE = "/api/users/me"; // 用户信息接口地址
+
+  // ===== 插件市场 =====
+  static const String PLUGIN_MARKET = "/api/plugins"; // 市场列表
+  static String pluginInstall(String code) => "/api/plugins/$code/install"; // 安装
+  static String pluginConfig(int id) => "/api/user-plugins/$id/config"; // 整体替换配置
+  static String pluginEnabled(int id) => "/api/user-plugins/$id/enabled"; // 启停
+  static String userPlugin(int id) => "/api/user-plugins/$id"; // 卸载
 }

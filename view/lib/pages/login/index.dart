@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -7,6 +6,7 @@ import 'dart:ui';
 import 'package:view/api/user.dart';
 import 'package:view/stores/TokenManager.dart';
 import 'package:view/stores/UserController.dart';
+import 'package:view/utils/ApiException.dart';
 import 'package:view/utils/LoadingDialog.dart';
 import 'package:view/utils/ToastUtils.dart';
 
@@ -30,12 +30,12 @@ class _LoginPageState extends State<LoginPage>
   late TabController _tabController;
 
   // 登录表单的输入控制器
-  TextEditingController _mobileController = TextEditingController(); // 手机号
-  TextEditingController _passwordController = TextEditingController(); // 密码
+  final TextEditingController _mobileController = TextEditingController(); // 手机号
+  final TextEditingController _passwordController = TextEditingController(); // 密码
   // 注册表单的输入控制器
-  TextEditingController _regMobileController = TextEditingController(); // 手机号
-  TextEditingController _regPasswordController = TextEditingController(); // 密码
-  TextEditingController _regUsernameController = TextEditingController(); // 昵称
+  final TextEditingController _regMobileController = TextEditingController(); // 手机号
+  final TextEditingController _regPasswordController = TextEditingController(); // 密码
+  final TextEditingController _regUsernameController = TextEditingController(); // 昵称
 
   // 两个tab各一个Form的key，用于触发表单校验
   final GlobalKey<FormState> _loginFormKey = GlobalKey<FormState>();
@@ -74,18 +74,20 @@ class _LoginPageState extends State<LoginPage>
         "mobile": _mobileController.text, // 后端字段名是mobile
         "password": _passwordController.text,
       });
-      // 登录成功后 把用户信息赋值给userController
-      _userController.updateUserInfo(res);
-      // 必须await：确保持久化写入完成后再跳转，否则热重启后token丢失
+      // 必须先写 token 再更新登录态：市场页监听到用户变化会立刻发请求，
+      // 顺序反了会出现"请求已发出但 token 还没写入内存"的 401
       await tokenManager.setToken(res.token);
-      // await 期间页面可能已被销毁，先判断再用 context
+      _userController.updateUserInfo(res);
       if (!mounted) return;
       ToastUtils.showToast(context, "登录成功");
       Navigator.pop(context); // 返回上个页面
     } catch (e) {
       // 同样先判断页面是否还在，再用 context 弹提示
       if (!mounted) return;
-      ToastUtils.showToast(context, (e as DioException).message);
+      ToastUtils.showToast(
+        context,
+        e is ApiException ? e.message : "操作失败，请稍后重试",
+      );
     } finally {
       // 页面还在才关 loading，避免操作已销毁的 context
       if (mounted) {
@@ -103,14 +105,17 @@ class _LoginPageState extends State<LoginPage>
         "password": _regPasswordController.text,
         "username": _regUsernameController.text, // 后端注册必填昵称
       });
-      _userController.updateUserInfo(res);
       await tokenManager.setToken(res.token);
+      _userController.updateUserInfo(res);
       if (!mounted) return;
       ToastUtils.showToast(context, "注册成功");
       Navigator.pop(context); // 返回上个页面
     } catch (e) {
       if (!mounted) return;
-      ToastUtils.showToast(context, (e as DioException).message);
+      ToastUtils.showToast(
+        context,
+        e is ApiException ? e.message : "操作失败，请稍后重试",
+      );
     } finally {
       if (mounted) {
         LoadingDialog.hide(context);

@@ -22,3 +22,8 @@ Future<UserInfo> getUserInfoAPI() async {
     await dioRequest.get(HttpConstants.USER_PROFILE),
   );
 }
+
+// 登出：后端把当前 token 的 jti 写入 Redis 黑名单，使其立即失效
+Future<void> logoutAPI() async {
+  await dioRequest.post(HttpConstants.LOGOUT);
+}
